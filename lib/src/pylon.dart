@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pylon/pylon.dart';
-import 'package:toxic/toxic.dart';
 
 /// A widget that provides a value to its descendants. This is useful for passing values
 /// to widgets that are not directly related to each other
@@ -9,7 +8,6 @@ class Pylon<T> extends StatelessWidget {
   final T value;
   final PylonBuilder? builder;
   final Widget? child;
-  final String? broadcast;
 
   /// If local is set to true it wont persist across navigation routes
   final bool local;
@@ -18,7 +16,6 @@ class Pylon<T> extends StatelessWidget {
       {super.key,
       required this.value,
       required this.builder,
-      this.broadcast,
       this.local = false})
       : child = null;
 
@@ -27,20 +24,12 @@ class Pylon<T> extends StatelessWidget {
   /// then it wont be available until either a builder function is used or the child widget build method uses it
   /// Use the regular constructor for lazy inlining
   const Pylon.withChild(
-      {super.key,
-      required this.value,
-      required this.child,
-      this.broadcast,
-      this.local = false})
+      {super.key, required this.value, required this.child, this.local = false})
       : builder = null;
-
-  dynamic encodeRaw(BuildContext context) =>
-      context.pylonCodec<T>().pylonToValue(value);
 
   /// This is primarily used for [PylonCluster]. Using this constructor produces a widget which will
   /// throw an error if built as it doesnt have a child or builder function
-  const Pylon.data(
-      {super.key, required this.value, this.local = false, this.broadcast})
+  const Pylon.data({super.key, required this.value, this.local = false})
       : builder = null,
         child = null;
 
@@ -59,20 +48,16 @@ class Pylon<T> extends StatelessWidget {
     Widget child, {
     PylonRouteType type = PylonRouteType.material,
     Route<T>? route,
-  }) {
-    UriPylonCodecUtils.updateUri(context);
-
-    return Navigator.push<T?>(
-            context,
-            route ??
-                switch (type) {
-                  PylonRouteType.material =>
-                    Pylon.materialPageRoute(context, (context) => child),
-                  PylonRouteType.cupertino =>
-                    Pylon.cupertinoPageRoute(context, (context) => child),
-                })
-        .thenRun((_) => UriPylonCodecUtils.updateUri(context));
-  }
+  }) =>
+      Navigator.push<T?>(
+          context,
+          route ??
+              switch (type) {
+                PylonRouteType.material =>
+                  Pylon.materialPageRoute(context, (context) => child),
+                PylonRouteType.cupertino =>
+                  Pylon.cupertinoPageRoute(context, (context) => child),
+              });
 
   /// Creates a [MaterialPageRoute] with the [Pylon] widgets mirrored into the builder function to transfer the values
   static MaterialPageRoute<T> materialPageRoute<T extends Object?>(
@@ -83,25 +68,6 @@ class Pylon<T> extends StatelessWidget {
   static CupertinoPageRoute<T> cupertinoPageRoute<T extends Object?>(
           BuildContext context, Widget Function(BuildContext) builder) =>
       CupertinoPageRoute<T>(builder: mirror(context, builder));
-
-  static Iterable<Pylon> visibleBroadcastingPylons(BuildContext context,
-          {bool ignoreLocals = false}) =>
-      visiblePylons(context, ignoreLocals: ignoreLocals)
-          .where((i) => i.broadcast != null);
-
-  static Uri visibleBroadcastToUri(BuildContext context, Uri uri,
-          {bool ignoreLocals = false}) =>
-      uri.replace(queryParameters: {
-        ...uri.queryParameters,
-        ...visibleBroadcastMap(context, ignoreLocals: ignoreLocals)
-      });
-
-  static Map<String, String> visibleBroadcastMap(BuildContext context,
-          {bool ignoreLocals = false}) =>
-      Map.fromEntries(
-          visibleBroadcastingPylons(context, ignoreLocals: ignoreLocals).map(
-              (p) => MapEntry(p.broadcast!,
-                  UriPylonCodecUtils.toUrlValue(p.encodeRaw(context)))));
 
   static List<Pylon> visiblePylons(BuildContext context,
       {bool ignoreLocals = false}) {
@@ -126,19 +92,16 @@ class Pylon<T> extends StatelessWidget {
     return providers;
   }
 
-  static void registerCodec(PylonCodec codec) => pylonFlatCodecs.add(codec);
-
   /// Creates a builder function which produces a PylonCluster of all visible ancestor pylons
   /// from [context] and uses the provided [builder] function. Use this when building custom routes
   static Widget Function(BuildContext) mirror(
       BuildContext context, Widget Function(BuildContext) builder) {
     List<Pylon> providers = visiblePylons(context, ignoreLocals: true);
 
-    return (context) => PylonBroadcaster(
-        builder: (context) => PylonCluster(
-              pylons: providers.reversed.toList(),
-              builder: builder,
-            ));
+    return (context) => PylonCluster(
+          pylons: providers.reversed.toList(),
+          builder: builder,
+        );
   }
 
   @override

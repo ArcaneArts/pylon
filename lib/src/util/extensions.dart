@@ -58,29 +58,3 @@ extension XContextPylon on BuildContext {
             snap.hasData ? builder(snap.data as T) : const SizedBox.shrink(),
       );
 }
-
-extension XContextPylonCodec on BuildContext {
-  PylonCodec<T>? _standardPylonCodec<T>() =>
-      pylonStandardCodecs.whereType<PylonCodec<T>>().firstOrNull;
-
-  PylonCodec<T>? _flatPylonCodec<T>() =>
-      pylonFlatCodecs.whereType<PylonCodec<T>>().firstOrNull;
-
-  PylonCodec<T> pylonCodec<T>() =>
-      _standardPylonCodec<T>() ??
-      _flatPylonCodec<T>() ??
-      pylon<PylonCodec<T>>();
-
-  PylonCodec<T>? pylonCodecOr<T>() =>
-      _standardPylonCodec<T>() ??
-      _flatPylonCodec<T>() ??
-      pylonOr<PylonCodec<T>>();
-
-  bool hasPylonCodec<T>() => pylonCodecOr<T>() != null;
-
-  String pylonEncode<T>(T value) =>
-      UriPylonCodecUtils.toUrlValue(pylonCodec<T>().pylonToValue(value));
-
-  Future<T> pylonDecode<T>(String value) =>
-      pylonCodec<T>().pylonFromValue(UriPylonCodecUtils.fromUrlValue(value));
-}

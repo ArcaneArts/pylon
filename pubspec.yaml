@@ -1,12 +1,13 @@
 name: pylon
 description: "Anchor data in your widget tree & obtain them more reliably than provider."
-version: 3.0.5
+version: 3.1.0
 repository: https://github.com/ArcaneArts/pylon
 environment:
   sdk: '>=3.4.3 <4.0.0'
   flutter: ">=1.17.0"
 dependencies:
   fast_log: ^1.0.7
+  universal_html: ^2.2.4
   flutter:
     sdk: flutter
   rxdart: ^0.28.0
