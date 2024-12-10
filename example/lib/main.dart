@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:pylon/pylon.dart';
 
 // Temporary storage of the "data"
@@ -12,7 +14,7 @@ void _addNote(String title, String note) => notes.add(Note(
     ));
 
 // A note class representing our data model
-class Note {
+class Note implements PylonCodec<Note> {
   final int id;
   final String name;
   final String description;
@@ -34,17 +36,29 @@ class Note {
         description: map['description'],
         id: map['id'],
       );
+
+  @override
+  String pylonEncode(Note value) => value.id.toString();
+
+  @override
+  Future<Note> pylonDecode(String value) async => notes[int.parse(value)];
 }
 
 void main() {
+  if (kIsWeb) {
+    usePathUrlStrategy();
+  }
+
   // Add some "notes"
   for (int i = 0; i < 100; i++) {
     _addNote("Hello Note ${notes.length}",
         "This is the content of note ${notes.length}");
   }
 
+  registerPylonCodec(const Note(id: -1, name: "", description: ""));
+
   // Register the codec
-  runApp(const MainS());
+  runApp(MainS());
 }
 
 extension _XContextPylonNotes on BuildContext {
@@ -52,13 +66,29 @@ extension _XContextPylonNotes on BuildContext {
 }
 
 class MainS extends StatelessWidget {
-  const MainS({super.key});
+  Map<String, WidgetBuilder> routes = {
+    "/": (context) => const HomeScreen(),
+    "/note": (context) => const NoteScreen()
+  };
+
+  MainS({super.key});
 
   @override
   Widget build(BuildContext context) => MaterialApp(
         theme: ThemeData.dark(),
         debugShowCheckedModeBanner: false,
-        home: HomeScreen(),
+        onGenerateRoute: (RouteSettings settings) {
+          if (settings.name?.isNotEmpty ?? false) {
+            String route = Uri.parse(settings.name!).path;
+
+            if (routes.containsKey(route)) {
+              return MaterialPageRoute(
+                  builder: routes[route]!, settings: settings);
+            }
+          }
+        },
+        routes: routes,
+        initialRoute: "/",
       );
 }
 
@@ -87,7 +117,10 @@ class NoteTile extends StatelessWidget {
   Widget build(BuildContext context) => ListTile(
         title: Text(context.note.name),
         subtitle: Text(context.note.description),
-        onTap: () => Pylon.push(context, NoteScreen()),
+        onTap: () => Pylon.push(context, NoteScreen(),
+            settings: RouteSettings(
+              name: "/note",
+            )),
       );
 }
 
@@ -95,10 +128,17 @@ class NoteScreen extends StatelessWidget {
   const NoteScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: Text(context.note.name),
+  Widget build(BuildContext context) => PylonPort<Note>(
+        tag: "note",
+        loading:
+            const Scaffold(body: Center(child: CircularProgressIndicator())),
+        error:
+            const Scaffold(body: Center(child: Text("Something went wrong"))),
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: Text(context.note.name),
+          ),
+          body: Text(context.note.description),
         ),
-        body: Text(context.note.description),
       );
 }

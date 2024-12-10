@@ -46,6 +46,7 @@ class Pylon<T> extends StatelessWidget {
   static Future<T?> push<T extends Object?>(
     BuildContext context,
     Widget child, {
+    RouteSettings? settings,
     PylonRouteType type = PylonRouteType.material,
     Route<T>? route,
   }) =>
@@ -53,21 +54,27 @@ class Pylon<T> extends StatelessWidget {
           context,
           route ??
               switch (type) {
-                PylonRouteType.material =>
-                  Pylon.materialPageRoute(context, (context) => child),
-                PylonRouteType.cupertino =>
-                  Pylon.cupertinoPageRoute(context, (context) => child),
+                PylonRouteType.material => Pylon.materialPageRoute(
+                    context, (context) => child,
+                    settings: settings),
+                PylonRouteType.cupertino => Pylon.cupertinoPageRoute(
+                    context, (context) => child,
+                    settings: settings),
               });
 
   /// Creates a [MaterialPageRoute] with the [Pylon] widgets mirrored into the builder function to transfer the values
   static MaterialPageRoute<T> materialPageRoute<T extends Object?>(
-          BuildContext context, Widget Function(BuildContext) builder) =>
-      MaterialPageRoute<T>(builder: mirror(context, builder));
+          BuildContext context, Widget Function(BuildContext) builder,
+          {RouteSettings? settings}) =>
+      MaterialPageRoute<T>(
+          settings: settings, builder: mirror(context, builder));
 
   /// Creates a [CupertinoPageRoute] with the [Pylon] widgets mirrored into the builder function to transfer the values
   static CupertinoPageRoute<T> cupertinoPageRoute<T extends Object?>(
-          BuildContext context, Widget Function(BuildContext) builder) =>
-      CupertinoPageRoute<T>(builder: mirror(context, builder));
+          BuildContext context, Widget Function(BuildContext) builder,
+          {RouteSettings? settings}) =>
+      CupertinoPageRoute<T>(
+          settings: settings, builder: mirror(context, builder));
 
   static List<Pylon> visiblePylons(BuildContext context,
       {bool ignoreLocals = false}) {

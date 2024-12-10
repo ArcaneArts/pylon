@@ -1,5 +1,7 @@
 ## 3.1.0
-* Routing
+* Added error widget property on PylonFuture
+* Added codecs & PylonCodec registration into Pylon
+* Added PylonPort used for pushing data into the browser address bar & pulling data down from the address bar if the data is unavailable on context.
 
 ## 3.0.5
 * Allow localized pylons that dont get picked up in mirror.

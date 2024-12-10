@@ -8,10 +8,12 @@ class PylonFuture<T> extends StatelessWidget {
   final T? initialData;
   final PylonBuilder builder;
   final Widget loading;
+  final Widget error;
 
   const PylonFuture(
       {super.key,
       required this.future,
+      this.error = const Text("Something went wrong"),
       this.initialData,
       required this.builder,
       this.loading = const SizedBox.shrink()});
@@ -20,10 +22,12 @@ class PylonFuture<T> extends StatelessWidget {
   Widget build(BuildContext context) => FutureBuilder<T>(
       future: future,
       initialData: initialData,
-      builder: (context, snap) => snap.hasData
-          ? Pylon<T>(
-              value: snap.data as T,
-              builder: builder,
-            )
-          : loading);
+      builder: (context, snap) => snap.hasError
+          ? error
+          : snap.hasData
+              ? Pylon<T>(
+                  value: snap.data as T,
+                  builder: builder,
+                )
+              : loading);
 }
