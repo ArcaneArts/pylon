@@ -1,3 +1,9 @@
+## 3.1.11
+* Fixes & Docs
+
+## 3.1.10
+* Beamer Test & Fix 
+
 ## 3.1.9
 * ADD `Pylon.pushReplacement`
 * ADD `Pylon.pushAndRemoveUntil`
