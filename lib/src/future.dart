@@ -1,69 +1,63 @@
 import 'package:flutter/widgets.dart';
 import 'package:pylon/pylon.dart';
 
-/// A widget that combines a [FutureBuilder] with a [Pylon] widget to handle asynchronous data loading.
+/// A [StatelessWidget] that integrates a [FutureBuilder] with a [Pylon] to manage asynchronous data loading
+/// and provide the resolved value to descendant widgets via the [Pylon] context extension.
 ///
-/// [PylonFuture] manages the loading, error, and data states of a [Future], and when the future
-/// completes successfully, it automatically wraps the result in a [Pylon] widget, making the value
-/// available to descendant widgets.
+/// This widget simplifies handling futures by automatically creating a [Pylon] with the future's result
+/// upon successful completion, allowing easy access to the data through `context.pylon<T>()` in the builder.
 ///
-/// This is particularly useful for:
-/// - Loading data from an API and making it available in the widget tree
-/// - Handling asynchronous initialization before providing state to your app
-/// - Simplifying the pattern of "load data → provide data → build UI with data"
+/// Key behaviors:
+/// - Displays [loading] widget while the future is pending (unless [initialData] is provided).
+/// - Shows [error] widget if the future fails.
+/// - Wraps the resolved data in a [Pylon] for the [builder] to consume, enabling reactive UI updates.
 ///
-/// Example usage:
+/// Use this for scenarios like API data fetching, async initialization, or any future-based state provision
+/// in Flutter apps, reducing boilerplate compared to manual [FutureBuilder] + [Pylon] composition.
+///
+/// Example:
 /// ```dart
 /// PylonFuture<User>(
-///   future: userRepository.fetchUser(userId),
-///   loading: CircularProgressIndicator(),
-///   error: Text("Failed to load user"),
-///   builder: (context) => UserProfileScreen(),
+///   future: repository.fetchUser(id),
+///   builder: (context) => UserWidget(user: context.pylon<User>()),
 /// )
 /// ```
 class PylonFuture<T> extends StatelessWidget {
-  /// The [Future] that will provide the value for the [Pylon].
+  /// The [Future<T>] whose result will populate the [Pylon] value upon completion.
   ///
-  /// This future is passed to a [FutureBuilder] internally. When it completes successfully,
-  /// its result becomes the value of the created [Pylon].
+  /// This drives the internal [FutureBuilder], determining loading, error, and data states.
+  /// The future's resolved value becomes accessible via `context.pylon<T>()` in the [builder].
   final Future<T> future;
 
-  /// Optional initial data for the future.
+  /// Optional initial value for the [Pylon] before the [future] resolves.
   ///
-  /// If provided, this value will be used as the pylon value until the [future] completes.
-  /// If not provided, the [loading] widget will be shown until the future completes.
+  /// If set, the [Pylon] is immediately created with this value, and the [builder] can render
+  /// using it while awaiting the actual future result. Without this, [loading] is shown initially.
   final T? initialData;
 
-  /// A builder function that creates a widget with access to the [Pylon] value.
+  /// Widget builder function that receives a [Pylon] context with the resolved future value.
   ///
-  /// This builder is passed to the [Pylon] widget created once the [future] completes
-  /// successfully. The builder will have access to the future's result through
-  /// `context.pylon<T>()`.
+  /// Called once the [future] completes successfully, providing access to the data via
+  /// `context.pylon<T>()`. This enables building UI that depends on the async-loaded value.
   final PylonBuilder builder;
 
-  /// The widget to display while the future is loading.
+  /// Widget displayed during [future] execution if no [initialData] is provided.
   ///
-  /// This widget is shown when the future has not yet completed and [initialData] is null.
-  /// Defaults to an empty [SizedBox] if not specified.
+  /// Shown in the pending state of the internal [FutureBuilder]. Defaults to an empty [SizedBox]
+  /// to avoid layout shifts, but can be customized (e.g., [CircularProgressIndicator]).
   final Widget loading;
 
-  /// The widget to display if the future completes with an error.
+  /// Widget shown if the [future] encounters an exception or error.
   ///
-  /// This widget is shown if the [future] encounters an error during execution.
-  /// Defaults to a simple "Something went wrong" text widget if not specified.
+  /// Rendered when the [FutureBuilder] detects an error state. Defaults to a basic error message
+  /// text, but typically customized with retry logic or user-friendly error UI.
   final Widget error;
 
-  /// Creates a [PylonFuture] widget.
+  /// Constructs a [PylonFuture] for async data provision via [Pylon].
   ///
-  /// The [future] and [builder] parameters are required:
-  /// - [future] is the asynchronous operation that will provide the pylon value
-  /// - [builder] is the function that creates a widget with access to that value
-  ///
-  /// Optional parameters:
-  /// - [initialData]: Initial value to use before the future completes
-  /// - [loading]: Widget to show while the future is in progress (defaults to empty SizedBox)
-  /// - [error]: Widget to show if the future fails (defaults to error message text)
-  /// - [key]: Widget key
+  /// Requires [future] for the async operation and [builder] to render with the resolved value.
+  /// Optional [initialData] allows immediate rendering; [loading] and [error] customize states.
+  /// All fields are final for immutability, supporting const construction where possible.
   const PylonFuture({
     super.key,
     required this.future,
@@ -74,13 +68,16 @@ class PylonFuture<T> extends StatelessWidget {
   });
 
   @override
-  /// Builds a [FutureBuilder] that handles the async state of [future] and creates
-  /// a [Pylon] with the result when available.
+
+  /// Builds the widget tree by delegating to a [FutureBuilder] that orchestrates states.
   ///
-  /// The build method returns:
-  /// - The [error] widget if the future completes with an error
-  /// - A [Pylon] containing the future's result if available
-  /// - The [loading] widget while waiting for the future to complete
+  /// Handles three cases based on the [future]'s snapshot:
+  /// - Error: Returns the [error] widget directly.
+  /// - Data available: Wraps the result in a [Pylon<T>] and invokes [builder] for rendering.
+  /// - Pending: Returns the [loading] widget (or uses [initialData] if provided).
+  ///
+  /// This method ensures seamless transition from loading to data provision without manual
+  /// state management, leveraging [Pylon]'s context-based value access for descendants.
   Widget build(BuildContext context) => FutureBuilder<T>(
       future: future,
       initialData: initialData,

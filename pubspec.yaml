@@ -1,6 +1,6 @@
 name: pylon
 description: "Anchor data in your widget tree & obtain them more reliably than provider."
-version: 3.1.11
+version: 3.2.0
 repository: https://github.com/ArcaneArts/pylon
 environment:
   sdk: '>=3.4.3 <4.0.0'
@@ -8,12 +8,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  js_interop: ^0.0.1
   pylon_codec: '>=1.0.0 <2.0.0'
   rxdart: '>=0.26.0'
   toxic: '>=1.3.1 <1.4.0'
   toxic_flutter: '>=1.0.1 <2.0.0'
-  beamer: '>=1.7.0 <2.0.0'
 dev_dependencies:
   flutter_test:
     sdk: flutter

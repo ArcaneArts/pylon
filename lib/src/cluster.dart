@@ -1,80 +1,61 @@
 import 'package:flutter/widgets.dart';
 import 'package:pylon/pylon.dart';
 
-/// A widget that combines multiple [Pylon] widgets into a single widget.
+/// A [StatelessWidget] that combines multiple [Pylon] widgets into a single, efficient widget.
 ///
-/// [PylonCluster] allows you to group multiple [Pylon] widgets together without deeply
-/// nesting them in the widget tree. This provides several benefits:
+/// [PylonCluster] groups [Pylon] instances to reduce widget tree nesting while preserving
+/// full [Pylon] functionality. Benefits include:
 ///
-/// 1. Reduces widget tree nesting depth, improving readability and maintainability
-/// 2. Maintains all the functionality of individual [Pylon] widgets
-/// 3. Ensures all pylons are immediately available to the builder method
-/// 4. Improves performance by reducing the number of builder widgets in the tree
+/// * Shallower widget tree for better readability and performance
+/// * Direct access to all pylon values in the [builder] via [BuildContext.pylon<T>()]
+/// * Efficient chaining of pylons as direct children
 ///
-/// Internally, [PylonCluster] constructs an efficient chain of [Pylon] widgets where
-/// each pylon is an immediate child of the previous one, with the last pylon containing
-/// your builder method.
+/// The structure forms a chain: each [Pylon] wraps the next, with the final [Pylon]
+/// containing the [builder]. If no pylons are provided, the [builder] executes directly.
 ///
-/// Example usage:
+/// Example:
 /// ```dart
 /// PylonCluster(
 ///   pylons: [
 ///     Pylon<int>.data(0),
 ///     Pylon<String>.data("hello"),
-///     Pylon<List<String>>.data(["item1", "item2"]),
 ///   ],
-///   builder: (context) {
-///     // All pylon values are accessible here
-///     int count = context.pylon<int>();
-///     String text = context.pylon<String>();
-///     List<String> items = context.pylon<List<String>>();
-///     
-///     return YourWidget(count: count, text: text, items: items);
-///   },
+///   builder: (context) => Text(context.pylon<String>()),
 /// )
 /// ```
 class PylonCluster extends StatelessWidget {
-  /// The list of [Pylon] widgets to be combined into this cluster.
+  /// The ordered list of [Pylon] widgets forming the cluster.
   ///
-  /// These should be created using [Pylon<T>.data()] constructor without providing a builder,
-  /// as the builder will be provided by the [PylonCluster] itself.
+  /// Provide [Pylon<T>.data()] instances without builders, as [PylonCluster]
+  /// supplies the shared [builder]. The sequence determines the wrapping order:
+  /// earlier pylons wrap later ones, making all values available in the [builder].
   ///
-  /// The order of pylons matters:
-  /// - Each pylon becomes a child of the previous one in the list
-  /// - The last pylon in the list will directly contain the builder function
-  /// - All pylons will be accessible to the builder function through [BuildContext]
-  ///
-  /// If this list is empty, the [builder] will be called directly without any pylons.
+  /// Empty lists result in direct [builder] execution without pylons.
   final List<Pylon> pylons;
-  
-  /// The builder function that constructs the widget tree using values from all pylons.
+
+  /// Builder function receiving a [BuildContext] with access to all cluster [Pylon] values
+  /// via the [BuildContext.pylon<T>()] extension.
   ///
-  /// This function receives a [BuildContext] that can access all pylon values in the cluster
-  /// using the [BuildContext.pylon<T>()] extension method.
-  ///
-  /// The widget returned by this builder will be the child of the innermost [Pylon] widget
-  /// in the cluster, or the direct result of the [PylonCluster] if [pylons] is empty.
+  /// Returns the widget tree child of the innermost [Pylon], or directly from
+  /// [PylonCluster] if [pylons] is empty.
   final PylonBuilder builder;
 
-  /// Creates a [PylonCluster] that combines multiple [Pylon] widgets.
+  /// Constructs a [PylonCluster] combining the provided [pylons] under a shared [builder].
   ///
-  /// Both [pylons] and [builder] parameters are required.
-  ///
-  /// The [pylons] parameter should contain [Pylon] widgets created with [Pylon<T>.data()]
-  /// without providing their own builders.
-  ///
-  /// The [builder] function will have access to all pylon values in the context.
+  /// Requires non-empty [pylons] of [Pylon.data] form and a [builder] function.
+  /// The [key] supports widget identity for Flutter's reconciliation.
   const PylonCluster({super.key, required this.pylons, required this.builder});
 
-  /// Builds the combined pylon structure from the list of pylons.
+  /// Constructs the chained [Pylon] structure for the widget tree.
   ///
-  /// This method:
-  /// 1. Handles empty or single pylon cases efficiently
-  /// 2. For multiple pylons, constructs a chain where each pylon is a direct child of the previous one
-  /// 3. Ensures the innermost pylon contains the provided [builder] function
+  /// Handles cases efficiently:
+  /// * Empty [pylons]: Returns [builder](context) directly.
+  /// * Single pylon: Applies [Pylon.copyWithBuilder] to attach [builder].
+  /// * Multiple pylons: Chains via [Pylon.copyWithChild] from last to first,
+  ///   attaching [builder] to the innermost using [Pylon.copyWithBuilder].
   ///
-  /// The resulting widget structure makes all pylon values accessible to the [builder]
-  /// through the [BuildContext].
+  /// This ensures minimal widget overhead while exposing all values to [builder]
+  /// through [BuildContext].
   @override
   Widget build(BuildContext context) {
     // If no pylons are provided, just call the builder directly

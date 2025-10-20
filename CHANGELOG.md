@@ -1,3 +1,7 @@
+## 3.2.0
+* Breaking: Removed beamer and url features to stop dep conflicts
+* Documentation changes
+
 ## 3.1.11
 * Fixes & Docs
 
