@@ -2,6 +2,16 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pylon/pylon.dart';
 
+/// Internal non-reactive scope used to fast-path typed pylon lookups.
+class _PylonScope<T> extends InheritedWidget {
+  final Pylon<T> pylon;
+
+  const _PylonScope({required this.pylon, required super.child});
+
+  @override
+  bool updateShouldNotify(covariant _PylonScope<T> oldWidget) => false;
+}
+
 /// A widget that nullifies a pylon value of type [T] from the widget tree.
 ///
 /// This widget creates a [Pylon]<T?> with a null value, effectively removing or overriding
@@ -109,6 +119,7 @@ class Pylon<T> extends StatelessWidget {
   /// Pylon<String>? stringPylon = Pylon.widgetOfOr<String>(context);
   /// ```
   static Pylon<T>? widgetOfOr<T>(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<_PylonScope<T>>()?.pylon ??
       context.findAncestorWidgetOfExactType<Pylon<T>>();
 
   /// Returns the type of value stored in this pylon.
@@ -329,7 +340,10 @@ class Pylon<T> extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => child ?? Builder(builder: builder!);
+  Widget build(BuildContext context) => _PylonScope<T>(
+        pylon: this,
+        child: child ?? Builder(builder: builder!),
+      );
 
   /// Returns a copy of this widget with the child widget set to [child].
   ///

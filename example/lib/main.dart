@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:precision_stopwatch/precision_stopwatch.dart';
 import 'package:pylon/pylon.dart';
 
 // Temporary storage of the "data"
@@ -136,6 +137,24 @@ class NoteScreen extends StatelessWidget {
             const Scaffold(body: Center(child: Text("Something went wrong"))),
         builder: (context) => Scaffold(
           appBar: AppBar(
+            actions: [
+              IconButton(
+                  onPressed: () {
+                    for (int i = 0; i < 100; i++) {
+                      context.note;
+                    }
+
+                    PrecisionStopwatch p = PrecisionStopwatch.start();
+
+                    for (int i = 0; i < 1000; i++) {
+                      context.note;
+                    }
+
+                    print(
+                        "1k pylon took ${p.getMilliseconds()} or ${p.getMilliseconds() / 1000.0}ms per access");
+                  },
+                  icon: Icon(Icons.navigation))
+            ],
             title: Text(context.note.name),
           ),
           body: Text(context.note.description),
